@@ -1,8 +1,9 @@
 {
   "name": "Code-Quality-Navigator-Extensions",
-  "displayName": "vscode-sonar-scanner-extention",
+  "displayName": "vscode-sonar-scanner-extension",
   "description": "It is an extension that provides the ability to analyze projects created by the code quality navigator WebIDE service.",
   "version": "0.0.1",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -10,14 +11,52 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:Code-Quality-Navigator-Extensions.helloWorld"
+    "onView:selectPathByEfs",
+    "onCommand:extension.scanCode",
+    "onCommand:extension.selectLanguage"
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeQualityNavigation",
+          "title": "Code Quality Navigation",
+          "icon": "public/next.svg"
+        }
+      ]
+    },
+    "views": {
+      "codeQualityNavigation": [
+        {
+          "id": "selectPathByEfs",
+          "name": "Select Path",
+          "when": "workspaceHasPackageJSON",
+          "icon": "media/next.svg",
+          "contextualTitle": "Select path for analysis" 
+        },
+        {
+          "id": "selectLanguage",
+          "name": "Select Language",
+          "when": "workspaceHasPackageJSON",
+          "icon": "media/next.svg",
+          "contextualTitle": "Choose analysis language"
+        },
+        {
+          "id": "scanCode",
+          "name": "Scan Code",
+          "contextualTitle": "Click to start analysis"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "Code-Quality-Navigator-Extensions.helloWorld",
-        "title": "Hello World"
+        "command": "extension.scanCode",
+        "title": "Scan Code"
+      },
+      {
+        "command": "extension.selectLanguage",
+        "title": "Select Language"
       }
     ]
   },

@@ -3,6 +3,20 @@ It is an extension that provides the ability to analyze projects created by the 
 
 This is the README for your extension "Code-Quality-Navigator-Extensions". After writing up a brief description, we recommend including the following sections.
 
+## Overview
+This is a simple VSCode extension that provides XYZ functionality.
+
+## Installation
+You can install this extension from the Visual Studio Marketplace or by running:
+
+```bash
+code --install-extension Code-Quality-Navigator-Extensions
+```
+
+## Usage
+
+After installation, use the command Code-Quality-Navigator-Extensions.helloWorld to invoke the extension.
+
 ## Features
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.

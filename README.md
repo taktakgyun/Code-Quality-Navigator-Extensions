@@ -1,4 +1,5 @@
 # Code-Quality-Navigator-Extensions README
+It is an extension that provides the ability to analyze projects created by the code quality navigator WebIDE service.
 
 This is the README for your extension "Code-Quality-Navigator-Extensions". After writing up a brief description, we recommend including the following sections.
 

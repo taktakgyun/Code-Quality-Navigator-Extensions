@@ -11,54 +11,46 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:selectPathByEfs",
-    "onCommand:extension.scanCode",
-    "onCommand:extension.selectLanguage"
+    "onCommand:codeQualityNavigator.selectPath",
+    "onCommand:codeQualityNavigator.selectLanguage",
+    "onCommand:codeQualityNavigator.scanCode"
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "codeQualityNavigator.selectPath",
+        "title": "Select Path for Code Analysis",
+        "category": "EFS Code Analysis"
+      },
+      {
+        "command": "codeQualityNavigator.selectLanguage",
+        "title": "Select Language for Code Analysis",
+        "category": "EFS Code Analysis"
+      },
+      {
+        "command": "codeQualityNavigator.scanCode",
+        "title": "Scan Code",
+        "category": "EFS Code Analysis"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "codeQualityNavigation",
-          "title": "Code Quality Navigation",
-          "icon": "public/next.svg"
+          "id": "CodeQualityNavigator",
+          "title": "Code Quality Navigator",
+          "icon": "resources/icon.svg"
         }
       ]
     },
     "views": {
-      "codeQualityNavigation": [
+      "CodeQualityNavigator": [
         {
-          "id": "selectPathByEfs",
-          "name": "Select Path",
-          "when": "workspaceHasPackageJSON",
-          "icon": "media/next.svg",
-          "contextualTitle": "Select path for analysis" 
-        },
-        {
-          "id": "selectLanguage",
-          "name": "Select Language",
-          "when": "workspaceHasPackageJSON",
-          "icon": "media/next.svg",
-          "contextualTitle": "Choose analysis language"
-        },
-        {
-          "id": "scanCode",
-          "name": "Scan Code",
-          "contextualTitle": "Click to start analysis"
+          "id": "codeQualityNavigator.selectPathView",
+          "name": "Selected Paths"
         }
       ]
-    },
-    "commands": [
-      {
-        "command": "extension.scanCode",
-        "title": "Scan Code"
-      },
-      {
-        "command": "extension.selectLanguage",
-        "title": "Select Language"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",

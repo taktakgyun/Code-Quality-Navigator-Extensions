@@ -1,56 +1,65 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-	const selectPathProvider = new DirectoryTreeProvider();
-	const selectLanguageProvider = new LanguageProvider();
-	vscode.window.registerTreeDataProvider('selectPathByEfs', selectPathProvider);
+	const languageProvider = new LanguageProvider();
+	const pathProvider = new PathProvider();
+    
+	vscode.window.registerTreeDataProvider('codeQualityNavigator.selectPathView', pathProvider);
+    
+	// "Select Path" 명령어 등록
+	const selectPathCommand = vscode.commands.registerCommand('codeQualityNavigator.selectPath', async () => {
+		const paths = efsPaths.map((path) => ({
+			label: path,
+			description: '',
+		}));
 
-	// 드롭다운 메뉴 구현
-	let selectLanguageCommand = vscode.commands.registerCommand('extension.selectLanguage', async () => {
+		const selectedPath = await vscode.window.showQuickPick(paths, {
+			placeHolder: 'Select a path for code analysis',
+		});
+
+		if (selectedPath) {
+			vscode.window.showInformationMessage(`Selected path: ${selectedPath.label}`);
+			pathProvider.addPath(selectedPath.label);
+		}
+	});
+
+	// 언어 선택 드롭다운 메뉴 명령어 등록
+	const selectLanguageCommand = vscode.commands.registerCommand('codeQualityNavigator.selectLanguage', async () => {
 		const languages = ['Java', 'Python'];
 		const selectedLanguage = await vscode.window.showQuickPick(languages, {
 			placeHolder: 'Select the programming language for analysis'
 		});
 		if (selectedLanguage) {
 			vscode.window.showInformationMessage(`Selected language: ${selectedLanguage}`);
-			selectLanguageProvider.setSelectedLanguage(selectedLanguage);
+			languageProvider.setSelectedLanguage(selectedLanguage);
 		}
 	});
 
-	// 코드 스캔 버튼 기능 추가
-	let scanCodeCommand = vscode.commands.registerCommand('extension.scanCode', async () => {
-		const selectedPath = selectPathProvider.selectedPath;
-		const selectedLanguage = selectLanguageProvider.selectedLanguage;
+	// 코드 스캔 요청 명령어 등록
+	const scanCodeCommand = vscode.commands.registerCommand('codeQualityNavigator.scanCode', async () => {
+		const selectedPath = pathProvider.getSelectedPath();
+		const selectedLanguage = languageProvider.selectedLanguage;
 
 		if (selectedPath && selectedLanguage) {
-			await requestScan(selectedPath, selectedLanguage);
+			await requestCodeScan(selectedPath, selectedLanguage);
 			vscode.window.showInformationMessage('Code scan requested.');
 		} else {
 			vscode.window.showErrorMessage('Please select a path and language first.');
 		}
 	});
 
-	context.subscriptions.push(selectLanguageCommand, scanCodeCommand);
+	context.subscriptions.push(selectLanguageCommand, scanCodeCommand, selectPathCommand);
+	initializeTreeView(pathProvider);
 }
 
-// 디렉토리 Tree Provider
-class DirectoryTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-	selectedPath: string | undefined;
+// EFS 경로 데이터 예제 (실제 사용 시 API 호출로 데이터를 불러올 예정)
+const efsPaths = [
+	'efs/folder1',
+	'efs/folder2',
+	'efs/folder3'
+];
 
-	getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-		return element;
-	}
-
-	getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
-		return fetchDirectory().then((directories) => {
-			return directories.map((dir) => {
-				return new vscode.TreeItem(dir, vscode.TreeItemCollapsibleState.None);
-			});
-		});
-	}
-}
-
-// 언어 선택에 사용될 객체 (상태 저장)
+// 언어 선택 상태 관리 클래스
 class LanguageProvider {
 	selectedLanguage: string | undefined;
 
@@ -59,36 +68,72 @@ class LanguageProvider {
 	}
 }
 
-// 스캔 요청 함수
-async function requestScan(path: string, language: string) {
+// 경로 선택 TreeDataProvider 클래스
+class PathProvider implements vscode.TreeDataProvider<PathItem> {
+	private _onDidChangeTreeData: vscode.EventEmitter<PathItem | undefined | void> = new vscode.EventEmitter<PathItem | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<PathItem | undefined | void> = this._onDidChangeTreeData.event;
+	private selectedPaths: string[] = [];
+
+	constructor() {}
+
+	// 선택한 경로를 추가하는 메서드
+	addPath(path: string) {
+		if (!this.selectedPaths.includes(path)) {
+			this.selectedPaths.push(path);
+			this.refresh();
+			vscode.window.setStatusBarMessage(`Path added: ${path}`, 2000);
+		}
+	}
+
+	getSelectedPath(): string | undefined {
+		return this.selectedPaths.length > 0 ? this.selectedPaths[0] : undefined;
+	}
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
+
+	getTreeItem(element: PathItem): vscode.TreeItem {
+		return element;
+	}
+
+	getChildren(element?: PathItem): Thenable<PathItem[]> {
+		const items = this.selectedPaths.map((path) => new PathItem(path, vscode.TreeItemCollapsibleState.None));
+		return Promise.resolve(items);
+	}
+}
+
+// TreeView 아이템 정의
+class PathItem extends vscode.TreeItem {
+	constructor(
+		public readonly label: string,
+		public readonly collapsibleState: vscode.TreeItemCollapsibleState
+	) {
+		super(label, collapsibleState);
+	}
+}
+
+// TreeView 초기화 함수
+function initializeTreeView(pathProvider: PathProvider) {
+	vscode.window.createTreeView('codeQualityNavigator.selectPathView', {
+		treeDataProvider: pathProvider,
+	});
+}
+
+// 코드 스캔 요청 함수
+async function requestCodeScan(path: string, language: string) {
 	const containerName = process.env.CONTAINER_NAME;
 	const password = process.env.PASSWORD;
 
 	const headers = {
-		'Container-Name': containerName,
-		'Password': password,
+		'Container-Name': containerName || '',
+		'Password': password || '',
 		'Content-Type': 'application/json'
 	};
 
-	vscode.window.showInformationMessage('Success scan requested.');
-
-	// try {
-	// 	const response = await fetch('https://pair-api.co.kr/scan', {
-	// 		method: 'POST',
-	// 		headers: headers,
-	// 		body: JSON.stringify({ path, language })
-	// 	});
-	// 	return await response.json();
-	// } catch (error) {
-	// 	vscode.window.showErrorMessage(`Error during scan: ${error}`);
-	// }
+	// 예제 요청 - 실제 사용 시 HTTP POST 요청을 여기에서 수행합니다.
+	// await axios.post('https://pair-api.co.kr/scan', { path, language }, { headers });
+	vscode.window.showInformationMessage(`Scan requested for path: ${path}, language: ${language}`);
 }
 
-// 가상 함수 - API에서 디렉토리 목록 가져오기
-async function fetchDirectory(): Promise<string[]> {
-	return ['path/to/dir1', 'path/to/dir2', 'path/to/dir3'];
-}
-
-
-// This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
